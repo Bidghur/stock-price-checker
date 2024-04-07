@@ -1,4 +1,4 @@
-import { Injectable, CanActivate, ExecutionContext, Inject } from '@nestjs/common';
+import { Injectable, CanActivate, ExecutionContext, Inject, NotFoundException } from '@nestjs/common';
 import { Request } from 'express';
 import { Observable } from 'rxjs';
 import { FinnhubStockService } from 'src/finnhub-stock/finnhub-stock.service';
@@ -11,14 +11,14 @@ interface RequestParams {
 export class IsValidSymbol implements CanActivate {
     constructor(@Inject(FinnhubStockService) private finnHubService: FinnhubStockService) {}
 
-    canActivate(
+    async canActivate(
         context: ExecutionContext,
-      ): boolean | Promise<boolean> | Observable<boolean> {
+      ): Promise<boolean> {
         const request = context.switchToHttp().getRequest<Request<RequestParams>>();
-        return this.validateRequest(request);
-      }
 
-        private validateRequest(request: Request<RequestParams>): boolean | Promise<boolean> | Observable<boolean> {
-            return this.finnHubService.isSymbolValid(request.params.symbol)
+        const symbol = request.params.symbol
+        if(!(await this.finnHubService.isSymbolValid(symbol))) throw new NotFoundException(`Stock doesn't exists with: ${symbol} symbol.`)
+
+        return true
       }
 }
