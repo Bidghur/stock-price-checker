@@ -1,7 +1,6 @@
 import { Injectable, CanActivate, ExecutionContext, Inject, NotFoundException } from '@nestjs/common';
 import { Request } from 'express';
-import { Observable } from 'rxjs';
-import { FinnhubStockService } from 'src/finnhub-stock/finnhub-stock.service';
+import { FinnhubStockService } from '../finnhub-stock/finnhub-stock.service';
 
 interface RequestParams {
     symbol: string

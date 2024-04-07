@@ -1,7 +1,7 @@
 import { Injectable, Logger, NotFoundException } from "@nestjs/common";
 import { Cron, CronExpression } from "@nestjs/schedule";
 import { StockModel } from "./stock-model";
-import { FinnhubStockService } from "src/finnhub-stock/finnhub-stock.service";
+import { FinnhubStockService } from "../finnhub-stock/finnhub-stock.service";
 
 
 @Injectable()
@@ -45,6 +45,7 @@ export class StockService {
     async addNewSymbol(symbol: string): Promise<string> {
         if(!Object.keys(this.subscribedSymbols).includes(symbol)) {
             this.subscribedSymbols[symbol] = []
+            this.logger.log(`Adding new symbol: ${symbol} to subscribed array.`)
             return `Successfully updated the subscribed array with: ${symbol} symbol.`
         }
 

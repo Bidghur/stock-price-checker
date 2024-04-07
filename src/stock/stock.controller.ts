@@ -1,9 +1,9 @@
 import { Controller, Get, Param, Put, UseGuards } from "@nestjs/common";
 import { StockService } from "./stock.service";
 import { StockModel } from "./stock-model";
-import { IsValidSymbol } from "src/guards/is-invalid-symbol.guard";
+import { IsValidSymbol } from "../guards/is-invalid-symbol.guard";
 import { ApiOkResponse, ApiParam } from "@nestjs/swagger";
-import { SymbolToUpper } from "src/pipes/symbol-to-upper.pipe";
+import { SymbolToUpper } from "../pipes/symbol-to-upper.pipe";
 
 @Controller('stock')
 @UseGuards(IsValidSymbol)

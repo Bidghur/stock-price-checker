@@ -75,9 +75,11 @@ describe('Finngub Stock Service', () => {
         }
     } as any
     jest.spyOn(httpService, 'get').mockImplementation(() => throwError(mockError))
+    const loggerspy = jest.spyOn(logger, 'error')
 
     const expectedError = new HttpException('Error while fetching Finnhub response: test error', 500)
     expect(finnhubStockService.getFinnHubResponseBySymbol('AAPL')).rejects.toEqual(expectedError)
+    expect(loggerspy).toHaveBeenCalledWith('Error while fetching Finnhub response: test error')
   })
 
   it('Should return true if symbol valid', async () => {
