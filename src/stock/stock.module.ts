@@ -1,4 +1,4 @@
-import { Module } from "@nestjs/common";
+import { Logger, Module } from "@nestjs/common";
 import { StockController } from "./stock.controller";
 import { StockService } from "./stock.service";
 import { HttpModule } from "@nestjs/axios";
@@ -16,7 +16,8 @@ import { IsValidSymbol } from "src/guards/is-invalid-symbol.guard";
         {
             provide: APP_GUARD,
             useClass: IsValidSymbol,
-        }
+        },
+        Logger
     ],
 })
 export class StockModule {}
