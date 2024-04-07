@@ -1,5 +1,5 @@
 export interface StockModel {
-    currentPrice: number
-    lastUpdated: string
+    currentPrice: number,
+    lastUpdated: string,
     movingAverage: number
 }
