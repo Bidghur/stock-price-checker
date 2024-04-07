@@ -1,7 +1,10 @@
-import { Module } from "@nestjs/common";
+import { Global, Module } from "@nestjs/common";
 import { HttpModule } from "@nestjs/axios";
+import { FinnhubStockService } from "./finnhub-stock.service";
 
+@Global()
 @Module({
-    imports: [HttpModule]
+    imports: [HttpModule],
+    providers: [FinnhubStockService],
 })
-export class StockModule {}
+export class FinnhubStockModule {}
