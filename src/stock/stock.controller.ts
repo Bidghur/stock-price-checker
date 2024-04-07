@@ -1,12 +1,12 @@
 import { Controller, Get, Param, Put, UseGuards } from "@nestjs/common";
 import { StockService } from "./stock.service";
 import { StockModel } from "./stock-model";
-import { IsValidSymbol } from "../guards/is-invalid-symbol.guard";
+import { SymbolValidator } from "../guards/symbol-validator.guard";
 import { ApiOkResponse, ApiParam } from "@nestjs/swagger";
 import { SymbolToUpper } from "../pipes/symbol-to-upper.pipe";
 
 @Controller('stock')
-@UseGuards(IsValidSymbol)
+@UseGuards(SymbolValidator)
 export class StockController {
     constructor(private readonly stockService: StockService) {}
 

@@ -5,7 +5,7 @@ import { HttpModule } from "@nestjs/axios";
 import { FinnhubStockModule } from "src/finnhub-stock/finnhub-stock.module";
 import { FinnhubStockService } from "src/finnhub-stock/finnhub-stock.service";
 import { APP_GUARD } from "@nestjs/core";
-import { IsValidSymbol } from "src/guards/is-invalid-symbol.guard";
+import { SymbolValidator } from "src/guards/symbol-validator.guard";
 
 @Module({
     imports: [HttpModule, FinnhubStockModule],
@@ -15,7 +15,7 @@ import { IsValidSymbol } from "src/guards/is-invalid-symbol.guard";
         FinnhubStockService, 
         {
             provide: APP_GUARD,
-            useClass: IsValidSymbol,
+            useClass: SymbolValidator,
         },
         Logger
     ],

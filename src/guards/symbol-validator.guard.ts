@@ -7,7 +7,7 @@ interface RequestParams {
 }
 
 @Injectable()
-export class IsValidSymbol implements CanActivate {
+export class SymbolValidator implements CanActivate {
     constructor(@Inject(FinnhubStockService) private finnHubService: FinnhubStockService) {}
 
     async canActivate(
