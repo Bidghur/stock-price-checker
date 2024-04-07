@@ -1,9 +1,9 @@
 import { HttpService } from "@nestjs/axios"
-import { HttpException, Injectable, Logger, LoggerService } from "@nestjs/common"
+import { HttpException, Injectable, Logger } from "@nestjs/common"
 import { catchError, lastValueFrom, retry } from "rxjs"
 import { FinnhubStockResponse } from "./finnhub-stock-response.model"
 import { AxiosError } from "axios"
-import { FINNHUB_URL } from "src/config/config"
+import { FINNHUB_URL } from "../config/config"
 import { FinnhubStockErrorResponse } from "./finnuhb-stock-error-response.model"
 
 @Injectable()
@@ -17,7 +17,7 @@ export class FinnhubStockService {
                     'X-Finnhub-Token': process.env.FINNHUB_TOKEN
                 }
             }).pipe(
-                
+                retry(2),
                 catchError((error: AxiosError<FinnhubStockErrorResponse>) => {
                     this.logger.error(`Error while fetching Finnhub response: ${error.response?.data?.error}`)
                     throw new HttpException(`Error while fetching Finnhub response: ${error.response?.data?.error}`, 500)
