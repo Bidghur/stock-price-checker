@@ -17,7 +17,7 @@ export class FinnhubStockService {
                     'X-Finnhub-Token': process.env.FINNHUB_TOKEN
                 }
             }).pipe(
-                retry(2),
+                
                 catchError((error: AxiosError<FinnhubStockErrorResponse>) => {
                     this.logger.error(`Error while fetching Finnhub response: ${error.response?.data?.error}`)
                     throw new HttpException(`Error while fetching Finnhub response: ${error.response?.data?.error}`, 500)

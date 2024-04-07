@@ -2,7 +2,8 @@ import { Controller, Get, Param, Put, UseGuards } from "@nestjs/common";
 import { StockService } from "./stock.service";
 import { StockModel } from "./stock-model";
 import { IsValidSymbol } from "src/guards/is-invalid-symbol.guard";
-import { ApiOkResponse, ApiParam, ApiResponse } from "@nestjs/swagger";
+import { ApiOkResponse, ApiParam } from "@nestjs/swagger";
+import { SymbolToUpper } from "src/pipes/symbol-to-upper.pipe";
 
 @Controller('stock')
 @UseGuards(IsValidSymbol)
@@ -14,7 +15,12 @@ export class StockController {
         type: StockModel,
         description: "Get stock informations by symbol."
     })
-    async getStock(@Param('symbol') symbol : string): Promise<StockModel> {
+    @ApiParam({
+        name: 'symbol',
+        example: 'AAPL',
+        required: true
+    })
+    async getStock(@Param('symbol', SymbolToUpper) symbol: string): Promise<StockModel> {
         return await this.stockService.getStockBySymbol(symbol)
     }
 
@@ -22,7 +28,12 @@ export class StockController {
     @ApiOkResponse({
         description: "Add new symbol to the subsribed symbols array."
     })
-    async addNewStock(@Param('symbol') symbol : string): Promise<string> {
+    @ApiParam({
+        name: 'symbol',
+        example: 'AAPL',
+        required: true
+    })
+    async addNewStock(@Param('symbol', SymbolToUpper) symbol: string): Promise<string> {
         return await this.stockService.addNewSymbol(symbol)
     }
 
