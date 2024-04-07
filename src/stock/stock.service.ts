@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from "@nestjs/common";
+import { Injectable, Logger, NotFoundException } from "@nestjs/common";
 import { Cron, CronExpression } from "@nestjs/schedule";
 import { StockModel } from "./stock-model";
 import { FinnhubStockService } from "src/finnhub-stock/finnhub-stock.service";
@@ -8,7 +8,7 @@ import { FinnhubStockService } from "src/finnhub-stock/finnhub-stock.service";
 export class StockService {
     private readonly subscribedSymbols: Record<string, StockModel[]> = {}
 
-    constructor(private readonly finnHubStockService: FinnhubStockService) {}
+    constructor(private readonly finnHubStockService: FinnhubStockService, private readonly logger: Logger) {}
 
     @Cron(CronExpression.EVERY_5_SECONDS)
     private async getNewDataForSymbols(): Promise<void> {
@@ -21,7 +21,7 @@ export class StockService {
             stocks.push(newStock)
 
         }
-        console.log('mükszik', this.subscribedSymbols)
+        this.logger.log(`Getting stocks for: ${Object.keys(this.subscribedSymbols).join(',')}`)
     }
 
     async getStockBySymbol(symbol: string): Promise<StockModel>  {
@@ -61,7 +61,7 @@ export class StockService {
 
     private generateDateFormat(timeStamp: number): string {
         const date = new Date(timeStamp)
-        const styledMonth = date.getMonth() < 10 ? '0' + date.getMonth() : date.getMonth()
-        return `${date.getFullYear()}-${styledMonth}-${date.getDay()} ${date.getHours()}:${date.getMinutes()}`
+        //Looked into more clever or cleaner way to format the date, but to be honest it is the cleanest way.
+        return date.toLocaleString([], { timeZone: 'America/New_York' }).replace('. ', '-').replace('. ', '-')
     }
 }
