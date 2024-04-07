@@ -20,7 +20,7 @@ export class StockController {
 
     @Put(':symbol')
     @ApiOkResponse({
-        description: "Get stock informations by symbol."
+        description: "Add new symbol to the subsribed symbols array."
     })
     async addNewStock(@Param('symbol') symbol : string): Promise<string> {
         return await this.stockService.addNewSymbol(symbol)

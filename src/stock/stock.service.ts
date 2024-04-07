@@ -6,14 +6,14 @@ import { FinnhubStockService } from "src/finnhub-stock/finnhub-stock.service";
 
 @Injectable()
 export class StockService {
-    private readonly interestedSymbols: Record<string, StockModel[]> = {}
+    private readonly subscribedSymbols: Record<string, StockModel[]> = {}
 
     constructor(private readonly finnHubStockService: FinnhubStockService) {}
 
     @Cron(CronExpression.EVERY_5_SECONDS)
     private async getNewDataForSymbols(): Promise<void> {
-        for(const key in this.interestedSymbols) {
-            const stocks = this.interestedSymbols[key]
+        for(const key in this.subscribedSymbols) {
+            const stocks = this.subscribedSymbols[key]
             const newStock  = await this.getStockBySymbol(key)
             if(stocks.length >= 10) {
                 stocks.shift()
@@ -21,7 +21,7 @@ export class StockService {
             stocks.push(newStock)
 
         }
-        console.log('mükszik', this.interestedSymbols)
+        console.log('mükszik', this.subscribedSymbols)
     }
 
     async getStockBySymbol(symbol: string): Promise<StockModel>  {
@@ -35,14 +35,14 @@ export class StockService {
             If we already added that symbol to our looked up array,
             we can calculate moving average if not we are just using the current value 
             */
-            movingAverage: this.interestedSymbols[symbol]?.length > 0 ? this.calculateTheMovingAverage(symbol) : finnHubResponse.c
+            movingAverage: this.subscribedSymbols[symbol]?.length > 0 ? this.calculateTheMovingAverage(symbol) : finnHubResponse.c
         }
         return stock
     }
 
     async addNewSymbol(symbol: string): Promise<string> {
-        if(!Object.keys(this.interestedSymbols).includes(symbol)) {
-            this.interestedSymbols[symbol] = []
+        if(!Object.keys(this.subscribedSymbols).includes(symbol)) {
+            this.subscribedSymbols[symbol] = []
             return `Successfully updated the look up array with: ${symbol} symbol.`
         }
 
@@ -50,7 +50,7 @@ export class StockService {
     }
 
     private calculateTheMovingAverage(symbol: string): number {
-        const stocks = this.interestedSymbols[symbol]
+        const stocks = this.subscribedSymbols[symbol]
         const lastStock = stocks.at(-1)
         if(!lastStock) {
             return 0
