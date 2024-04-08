@@ -15,8 +15,9 @@ export class StockService {
         private readonly prismaService: PrismaService
     ) {}
 
-    @Cron(CronExpression.EVERY_5_SECONDS)
+    @Cron(CronExpression.EVERY_MINUTE)
     private async getNewStockDataForSymbols(): Promise<void> {
+        this.logger.log(`Fetching stock data for: [${this.subscribedSymbols.join(',')}] symbols`)
         for(const key of this.subscribedSymbols) {
             const newStock  = await this.fetchNewStock(key)
             await this.prismaService.stock.create({
@@ -28,10 +29,12 @@ export class StockService {
                 }
             })
         }
-        this.logger.log(`Getting stocks for: ${this.subscribedSymbols.join(',')}`)
     }
 
-    //If the queried stock is in our DB and its updatedAt is not older then 1 day ago, then we are sending back from the DB
+    /*
+        If the queried stock is in our DB and its updatedAt is not older then 1 day ago, then we are sending back from the DB
+        Of course this method will give back the newest stock data if we are subsrcibed to that stock.
+    */
     async getStockBySymbol(symbol: string): Promise<StockDto>  {
         const latestStock = await this.getLatestStockFromDbBySymbol(symbol)
         if(latestStock && await this.isStockStillValid(latestStock)) {
@@ -117,7 +120,7 @@ export class StockService {
 
     private generateDateFormat(timeStamp: number): string {
         const date = new Date(timeStamp)
-        //Looked into more clever or cleaner way to format the date, but to be honest it is the cleanest way.
+        //Looked into more cleaner way to format the date, but to be honest it is the cleanest way.
         return date.toLocaleString([], { timeZone: 'America/New_York' }).replace('. ', '-').replace('. ', '-')
     }
 }
