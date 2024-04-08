@@ -1,6 +1,6 @@
 import { Controller, Get, Param, Put, UseGuards } from "@nestjs/common";
 import { StockService } from "./stock.service";
-import { StockModel } from "./stock-model";
+import { StockDto } from "./stock-dto.model";
 import { SymbolValidator } from "../guards/symbol-validator.guard";
 import { ApiOkResponse, ApiParam } from "@nestjs/swagger";
 import { SymbolToUpper } from "../pipes/symbol-to-upper.pipe";
@@ -12,7 +12,7 @@ export class StockController {
 
     @Get(':symbol')
     @ApiOkResponse({
-        type: StockModel,
+        type: StockDto,
         description: "Get stock informations by symbol."
     })
     @ApiParam({
@@ -20,7 +20,7 @@ export class StockController {
         example: 'AAPL',
         required: true
     })
-    async getStock(@Param('symbol', SymbolToUpper) symbol: string): Promise<StockModel> {
+    async getStock(@Param('symbol', SymbolToUpper) symbol: string): Promise<StockDto> {
         return await this.stockService.getStockBySymbol(symbol)
     }
 

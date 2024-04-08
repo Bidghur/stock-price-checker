@@ -4,7 +4,7 @@ import { FinnhubStockService } from "../finnhub-stock/finnhub-stock.service";
 import { Logger } from "@nestjs/common";
 import { HttpModule } from "@nestjs/axios";
 import { FinnhubStockResponse } from "../finnhub-stock/finnhub-stock-response.model";
-import { StockModel } from "./stock-model";
+import { StockDto } from "./stock-dto.model";
 
 describe('Stock Service', () => {
     let stockService: StockService
@@ -35,7 +35,7 @@ describe('Stock Service', () => {
         }
         jest.spyOn(finnhubStockService, 'getFinnHubResponseBySymbol').mockResolvedValue(mockedresponse)
 
-        const expectedStock: StockModel = {
+        const expectedStock: StockDto = {
             currentPrice: 169.58,
             lastUpdated: '2024-04-05. 16:00:01',
             movingAverage: 169.58

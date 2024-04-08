@@ -1,14 +1,19 @@
 import { Injectable, Logger, NotFoundException } from "@nestjs/common";
 import { Cron, CronExpression } from "@nestjs/schedule";
-import { StockModel } from "./stock-model";
+import { StockDto } from "./stock-dto.model";
 import { FinnhubStockService } from "../finnhub-stock/finnhub-stock.service";
+import { PrismaService } from "../prisma/prisma.service";
 
 
 @Injectable()
 export class StockService {
     private readonly subscribedSymbols: Record<string, number[]> = {}
 
-    constructor(private readonly finnHubStockService: FinnhubStockService, private readonly logger: Logger) {}
+    constructor(
+        private readonly finnHubStockService: FinnhubStockService, 
+        private readonly logger: Logger,
+        private readonly prismaService: PrismaService
+    ) {}
 
     @Cron(CronExpression.EVERY_5_SECONDS)
     private async getNewDataForSymbols(): Promise<void> {
@@ -18,17 +23,25 @@ export class StockService {
             if(stocks.length >= 10) {
                 stocks.shift()
             }
+            await this.prismaService.stock.create({
+                data: {
+                    currentPrice: newStock.currentPrice,
+                    movingAverage: newStock.movingAverage,
+                    updatedAt: newStock.lastUpdated,
+                    symbol: key
+                }
+            })
             stocks.push(newStock.movingAverage)
 
         }
         this.logger.log(`Getting stocks for: ${Object.keys(this.subscribedSymbols)}`)
     }
 
-    async getStockBySymbol(symbol: string): Promise<StockModel>  {
+    async getStockBySymbol(symbol: string): Promise<StockDto>  {
         const finnHubResponse  = await this.finnHubStockService.getFinnHubResponseBySymbol(symbol)
 
         //If there would be more then these fields in the long run an automapper implementation would be nice
-        const stock: StockModel = {
+        const stock: StockDto = {
             currentPrice: finnHubResponse.c,
             lastUpdated: this.generateDateFormat(finnHubResponse.t * 1000),
             /*
@@ -36,7 +49,7 @@ export class StockService {
             we can calculate moving average if not we are just using the current value 
             */
             movingAverage: this.subscribedSymbols[symbol]?.length > 0 ? 
-                                    this.calculateTheMovingAverage(symbol, finnHubResponse.c) : 
+                                    await this.calculateTheMovingAverage(symbol, finnHubResponse.c) : 
                                     finnHubResponse.c
         }
         return stock
@@ -52,13 +65,22 @@ export class StockService {
         return `${symbol} is already added to the subscribed list.`
     }
 
-    private calculateTheMovingAverage(symbol: string, currentPrice: number): number {
-        const averagePrices = this.subscribedSymbols[symbol]
-        const lastAvg = averagePrices.at(-1)
+    private async calculateTheMovingAverage(symbol: string, currentPrice: number): Promise<number> {
+        const stocks = await this.prismaService.stock.findMany({
+            where: {
+                symbol: symbol
+            },
+            orderBy: {
+                id: "desc"
+            },
+            take: 10
+        })
+        console.log('the stocks', stocks)
+        const lastAvg = stocks.at(-1)?.movingAverage
         if(!lastAvg) {
             return 0
         }
-        const newAverage = lastAvg * (averagePrices.length - 1) / averagePrices.length + (currentPrice / averagePrices.length)
+        const newAverage = lastAvg * (stocks.length - 1) / stocks.length + (currentPrice / stocks.length)
         return newAverage
     }
 

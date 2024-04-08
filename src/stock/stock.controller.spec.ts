@@ -3,7 +3,7 @@ import { StockController } from "./stock.controller"
 import { StockService } from "./stock.service"
 import { HttpModule } from "@nestjs/axios"
 import { Logger } from "@nestjs/common"
-import { StockModel } from "./stock-model"
+import { StockModel } from "./stock-dto.model"
 import { FinnhubStockService } from "../finnhub-stock/finnhub-stock.service"
 
 describe('Stock controller', () => {
