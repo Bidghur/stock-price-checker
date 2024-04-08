@@ -3,12 +3,12 @@ import { Cron, CronExpression } from "@nestjs/schedule";
 import { StockDto } from "./stock-dto.model";
 import { FinnhubStockService } from "../finnhub-stock/finnhub-stock.service";
 import { PrismaService } from "../prisma/prisma.service";
+import { Stock } from "@prisma/client";
 
 
 @Injectable()
 export class StockService {
-    private readonly subscribedSymbols: Record<string, number[]> = {}
-
+    private readonly subscribedSymbols: string[] = []
     constructor(
         private readonly finnHubStockService: FinnhubStockService, 
         private readonly logger: Logger,
@@ -16,13 +16,9 @@ export class StockService {
     ) {}
 
     @Cron(CronExpression.EVERY_5_SECONDS)
-    private async getNewDataForSymbols(): Promise<void> {
-        for(const key in this.subscribedSymbols) {
-            const stocks = this.subscribedSymbols[key]
-            const newStock  = await this.getStockBySymbol(key)
-            if(stocks.length >= 10) {
-                stocks.shift()
-            }
+    private async getNewStockDataForSymbols(): Promise<void> {
+        for(const key of this.subscribedSymbols) {
+            const newStock  = await this.fetchNewStock(key)
             await this.prismaService.stock.create({
                 data: {
                     currentPrice: newStock.currentPrice,
@@ -31,51 +27,86 @@ export class StockService {
                     symbol: key
                 }
             })
-            stocks.push(newStock.movingAverage)
-
         }
-        this.logger.log(`Getting stocks for: ${Object.keys(this.subscribedSymbols)}`)
+        this.logger.log(`Getting stocks for: ${this.subscribedSymbols.join(',')}`)
     }
 
+    //If the queried stock is in our DB and its updatedAt is not older then 1 day ago, then we are sending back from the DB
     async getStockBySymbol(symbol: string): Promise<StockDto>  {
-        const finnHubResponse  = await this.finnHubStockService.getFinnHubResponseBySymbol(symbol)
-
-        //If there would be more then these fields in the long run an automapper implementation would be nice
-        const stock: StockDto = {
-            currentPrice: finnHubResponse.c,
-            lastUpdated: this.generateDateFormat(finnHubResponse.t * 1000),
-            /*
-            If we already added that symbol to our subscribed array,
-            we can calculate moving average if not we are just using the current value 
-            */
-            movingAverage: this.subscribedSymbols[symbol]?.length > 0 ? 
-                                    await this.calculateTheMovingAverage(symbol, finnHubResponse.c) : 
-                                    finnHubResponse.c
+        const latestStock = await this.getLatestStockFromDbBySymbol(symbol)
+        if(latestStock && await this.isStockStillValid(latestStock)) {
+            const stock: StockDto = {
+                currentPrice: latestStock.currentPrice,
+                lastUpdated: latestStock.updatedAt,
+                movingAverage: latestStock.movingAverage
+            }
+            this.logger.log('Cached stock is returned.')
+            return stock
         }
-        return stock
+        this.logger.log('Fetching new stock.')
+        return await this.fetchNewStock(symbol)
+        
     }
 
     async addNewSymbol(symbol: string): Promise<string> {
-        if(!Object.keys(this.subscribedSymbols).includes(symbol)) {
-            this.subscribedSymbols[symbol] = []
+        if(!this.subscribedSymbols.includes(symbol)) {
             this.logger.log(`Adding new symbol: ${symbol} to subscribed array.`)
+            this.subscribedSymbols.push(symbol)
             return `Successfully updated the subscribed array with: ${symbol} symbol.`
         }
 
         return `${symbol} is already added to the subscribed list.`
     }
 
-    private async calculateTheMovingAverage(symbol: string, currentPrice: number): Promise<number> {
-        const stocks = await this.prismaService.stock.findMany({
+    private async fetchNewStock(symbol: string): Promise<StockDto> {
+        const finnHubResponse  = await this.finnHubStockService.getFinnHubResponseBySymbol(symbol)
+
+        const stock: StockDto = {
+            currentPrice: finnHubResponse.c,
+            lastUpdated: this.generateDateFormat(finnHubResponse.t * 1000),
+            /*
+                If we already saved some stocks into our DB with the requested symbol (at least 2), then calculate the moving average,
+                if not just use the new current price
+            */
+            movingAverage: (await this.getLastTenStocksBySymbol(symbol)).length > 1 ? 
+                                await this.calculateTheMovingAverage(symbol, finnHubResponse.c) : 
+                                finnHubResponse.c
+        }
+
+        return stock
+    }
+
+    private async isStockStillValid(latestStock: Stock): Promise<boolean> {
+        const latestUpdated = new Date(latestStock.updatedAt)
+        return latestUpdated.setDate(latestUpdated.getDate() + 1) >= Date.now()
+    }
+
+    private async getLatestStockFromDbBySymbol(symbol: string): Promise<Stock | null> {
+        return await this.prismaService.stock.findFirst({
             where: {
                 symbol: symbol
             },
             orderBy: {
-                id: "desc"
-            },
-            take: 10
+                id: 'desc'
+            }
         })
-        console.log('the stocks', stocks)
+    }
+
+    private async getLastTenStocksBySymbol(symbol: string): Promise<Stock[]> {
+        return await this.prismaService.stock.findMany({
+            where: {
+                symbol: symbol
+            },
+            take: 10,
+            orderBy: {
+                id: "desc"
+            }
+        })
+    }
+
+    private async calculateTheMovingAverage(symbol: string, currentPrice: number): Promise<number> {
+        const stocks = await this.getLastTenStocksBySymbol(symbol)
+
         const lastAvg = stocks.at(-1)?.movingAverage
         if(!lastAvg) {
             return 0
