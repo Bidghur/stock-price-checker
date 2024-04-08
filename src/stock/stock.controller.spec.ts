@@ -3,8 +3,9 @@ import { StockController } from "./stock.controller"
 import { StockService } from "./stock.service"
 import { HttpModule } from "@nestjs/axios"
 import { Logger } from "@nestjs/common"
-import { StockModel } from "./stock-model"
+import { StockDto } from "./stock-dto.model"
 import { FinnhubStockService } from "../finnhub-stock/finnhub-stock.service"
+import { PrismaService } from "../prisma/prisma.service"
 
 describe('Stock controller', () => {
     let stockController: StockController
@@ -14,7 +15,15 @@ describe('Stock controller', () => {
         const module = await Test.createTestingModule({
             imports: [HttpModule],
             controllers: [StockController],
-            providers: [StockService, Logger, FinnhubStockService],
+            providers: [
+                StockService, 
+                Logger, 
+                FinnhubStockService,
+                {
+                    provide: PrismaService,
+                    useValue: {}
+                }
+            ],
           }).compile();
     
         stockController = module.get<StockController>(StockController);
@@ -22,7 +31,7 @@ describe('Stock controller', () => {
     })
 
     it('Should return stock by symbol', async () => {
-        const mockedResponse: StockModel = {
+        const mockedResponse: StockDto = {
             currentPrice: 123,
             lastUpdated: 'test',
             movingAverage: 324

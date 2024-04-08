@@ -7,6 +7,7 @@ import { ExecutionContext, Logger, NotFoundException } from "@nestjs/common";
 import { StockService } from "../stock/stock.service";
 import { APP_GUARD } from "@nestjs/core";
 import { FinnhubStockResponse } from "../finnhub-stock/finnhub-stock-response.model";
+import { PrismaService } from "../prisma/prisma.service";
 
 describe('Symbol validator', () => {
     let symbolValidator: SymbolValidator
@@ -24,6 +25,10 @@ describe('Symbol validator', () => {
                     provide: APP_GUARD,
                     useClass: SymbolValidator,
                 },
+                {
+                    provide: PrismaService,
+                    useValue: {}
+                }
             ],
           }).compile();
     
