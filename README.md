@@ -1,4 +1,4 @@
-### Stock Price Checker
+# Stock Price Checker
 
 ## Description
 This project built only for test porpuses.
