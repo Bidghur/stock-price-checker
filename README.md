@@ -10,7 +10,7 @@ $ npm install
 ```
 ## Needed env variables
 
-Create .env folder in the root folder and you need to define two variables there.
+Create .env file in the root folder and you need to define two variables there.
 ```bash
 # for use finnhub third party API for stock prices, provide your token here to get access to their endpoints
 FINNHUB_TOKEN=
